@@ -3,9 +3,7 @@ from pydub import AudioSegment
 import os
 import azure.cognitiveservices.speech as speechsdk
 import time
-import threading
 import openai
-
 
 
 def recognize_from_audioFile(audiofile):
@@ -89,43 +87,50 @@ def summarize(transcript):
         presence_penalty=0.0)
     return completion.choices[0].text
 
+def formatSummary(summary):
+    summary_change= summary.maketrans({'。':'。<br>','.':".<br>"})
+    return summary.translate(summary_change)
 
 g_result = ""
-st.title("音声テキスト変換アプリ")
+st.title("音声テキスト変換と要約アプリ")
 
 st.markdown("### データ準備")
 input_option  = st.selectbox("入力データの選択",
-             ("直接入力","WAVファイル変換","テキストに変換"))
+             ("直接入力","音声をテキストに変換して要約する"))
 input_data = None
 
 if input_option == "直接入力":
     input_data  = st.text_area('こちらにテキストを入力してください','議事録を入力してください')
-    summary = summarize(input_data)
-    st.write("### テキスト要約結果:")
-    st.write(summary)
-elif input_option  == "WAVファイル変換":
+    if(input_data!= "議事録を入力してください"):
+        summary = formatSummary(summarize(input_data))
+        st.write("### テキスト要約結果:")
+        st.write(summary, unsafe_allow_html=True)
+    else:
+        st.write("### テキスト要約結果:")
+        st.write("議事録を入力してください")
+elif input_option  == "音声をテキストに変換して要約する":
     uploaded_file = st.file_uploader("mp3ファイルをアップロードしてください",["mp3"])
     if uploaded_file is not None:
         # Load the mp3 file
         audio = AudioSegment.from_mp3(uploaded_file)
         fileName = uploaded_file.name.split(".")[0]
+        wavFileName =  fileName + ".wav"
+
         # Specify the frequency (in Hz) for the wav file
         frequency = 48000
 
-        # Export the wav file with the specified frequency
-        audio.export(fileName + ".wav", format="wav", parameters=["-ar", str(frequency)])
+        if not os.path.exists(wavFileName):
+            # Export the wav file with the specified frequency
+            audio.export(wavFileName, format="wav", parameters=["-ar", str(frequency)])
 
         #play auido
         st.audio(uploaded_file)
-else:
-     uploaded_file = st.file_uploader("WAVファイルをアップロードしてください",["wav"])
-     if uploaded_file is not None:
+
         with st.spinner('変換中...'):
-            recognize_from_audioFile(uploaded_file.name)
+            recognize_from_audioFile(wavFileName)
         st.success('Done!')
         st.write("### 音声テキスト変換結果:")
         st.write(g_result)
-        st.audio(uploaded_file)
-        summary = summarize(g_result)
+        summary = formatSummary(summarize(g_result))
         st.write("### テキスト要約結果:")
-        st.write(summary)
+        st.write(summary, unsafe_allow_html=True)
