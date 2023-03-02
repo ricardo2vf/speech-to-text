@@ -77,17 +77,17 @@ def summarize(transcript):
     """
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    response = openai.Completion.create(
+    completion = openai.Completion.create(
         model="text-davinci-003",
-        prompt="Summarize this for a second-grade student:\n\n " + transcript,
-        temperature=0.7,
-        max_tokens=64,
+        # prompt="Summarize this for a second-grade student:\n\n " + transcript,
+        # prompt="Convert my short hand into a first-hand account of the meeting:\n\n " + transcript,
+        prompt="Please summarize the following meeting minutes:\n\n " + transcript,
+        temperature=0,
+        max_tokens=1000,
         top_p=1.0,
         frequency_penalty=0.0,
         presence_penalty=0.0)
-    return response.choices[0].text
-
-
+    return completion.choices[0].text
 
 
 g_result = ""
@@ -99,7 +99,10 @@ input_option  = st.selectbox("入力データの選択",
 input_data = None
 
 if input_option == "直接入力":
-    input_data  = st.text_area('こちらにテキストを入力してください','Cloud Speech-to-Text用のサンプルになります')
+    input_data  = st.text_area('こちらにテキストを入力してください','議事録を入力してください')
+    summary = summarize(input_data)
+    st.write("### テキスト要約結果:")
+    st.write(summary)
 elif input_option  == "WAVファイル変換":
     uploaded_file = st.file_uploader("mp3ファイルをアップロードしてください",["mp3"])
     if uploaded_file is not None:
@@ -123,6 +126,6 @@ else:
         st.write("### 音声テキスト変換結果:")
         st.write(g_result)
         st.audio(uploaded_file)
-        conclusion = summarize(g_result)
+        summary = summarize(g_result)
         st.write("### テキスト要約結果:")
-        st.write(conclusion)
+        st.write(summary)
