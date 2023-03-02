@@ -102,7 +102,9 @@ input_data = None
 if input_option == "直接入力":
     input_data  = st.text_area('こちらにテキストを入力してください','議事録を入力してください')
     if(input_data!= "議事録を入力してください"):
-        summary = formatSummary(summarize(input_data))
+        with st.spinner('要約処理中...'):
+            summary = formatSummary(summarize(input_data))
+        st.success('Done!')
         st.write("### テキスト要約結果:")
         st.write(summary, unsafe_allow_html=True)
     else:
@@ -126,7 +128,7 @@ elif input_option  == "音声をテキストに変換して要約する":
         #play auido
         st.audio(uploaded_file)
 
-        with st.spinner('変換中...'):
+        with st.spinner('変換と要約処理中...'):
             recognize_from_audioFile(wavFileName)
         st.success('Done!')
         st.write("### 音声テキスト変換結果:")
